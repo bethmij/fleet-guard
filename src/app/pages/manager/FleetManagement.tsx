@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -16,15 +16,10 @@ import {
   X
 } from 'lucide-react';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
+import { vehicleService } from '@/services/vehicleService';
+import { timeAgo } from '@/utils/time';
 
-const vehicles = [
-  { id: 'CAB-4523', make: 'Toyota', model: 'Prius', year: 2020, type: 'Car', status: 'Available', health: 92, lastInspection: '2 days ago', image: 'https://images.unsplash.com/photo-1758179128122-6079c9cb3e4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB2ZWhpY2xlJTIwc2VkYW4lMjBwYXJrZWR8ZW58MXx8fHwxNzY5NTE0OTU3fDA&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 'CAB-2891', make: 'Honda', model: 'Civic', year: 2021, type: 'Car', status: 'In-Use', health: 87, lastInspection: '5 days ago', image: 'https://images.unsplash.com/photo-1758179128122-6079c9cb3e4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB2ZWhpY2xlJTIwc2VkYW4lMjBwYXJrZWR8ZW58MXx8fHwxNzY5NTE0OTU3fDA&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 'CAB-7612', make: 'Nissan', model: 'Leaf', year: 2022, type: 'Car', status: 'Available', health: 95, lastInspection: '1 day ago', image: 'https://images.unsplash.com/photo-1758179128122-6079c9cb3e4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB2ZWhpY2xlJTIwc2VkYW4lMjBwYXJrZWR8ZW58MXx8fHwxNzY5NTE0OTU3fDA&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 'CAB-3344', make: 'Toyota', model: 'Corolla', year: 2019, type: 'Car', status: 'Maintenance', health: 68, lastInspection: '3 days ago', image: 'https://images.unsplash.com/photo-1758179128122-6079c9cb3e4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB2ZWhpY2xlJTIwc2VkYW4lMjBwYXJrZWR8ZW58MXx8fHwxNzY5NTE0OTU3fDA&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 'VAN-1234', make: 'Toyota', model: 'Hiace', year: 2020, type: 'Van', status: 'Available', health: 85, lastInspection: '4 days ago', image: 'https://images.unsplash.com/photo-1758179128122-6079c9cb3e4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB2ZWhpY2xlJTIwc2VkYW4lMjBwYXJrZWR8ZW58MXx8fHwxNzY5NTE0OTU3fDA&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 'SUV-5678', make: 'Mitsubishi', model: 'Pajero', year: 2021, type: 'SUV', status: 'In-Use', health: 90, lastInspection: '2 days ago', image: 'https://images.unsplash.com/photo-1758179128122-6079c9cb3e4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB2ZWhpY2xlJTIwc2VkYW4lMjBwYXJrZWR8ZW58MXx8fHwxNzY5NTE0OTU3fDA&ixlib=rb-4.1.0&q=80&w=1080' },
-];
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1758179128122-6079c9cb3e4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080';
 
 export function FleetManagement() {
   const navigate = useNavigate();
@@ -33,18 +28,43 @@ export function FleetManagement() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [vehiclesFromApi, setVehiclesFromApi] = useState<Array<{
+    id: number;
+    number_plate: string;
+    make: string;
+    model: string;
+    year?: number;
+    vehicle_type?: string;
+    status: string;
+    health_score?: number;
+    updated_at?: string;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter vehicles based on search and filters
+  useEffect(() => {
+    vehicleService.getAll({ search: searchQuery || undefined, status: statusFilter === 'all' ? undefined : statusFilter })
+      .then((data: any) => setVehiclesFromApi(data.vehicles || []))
+      .catch(() => setVehiclesFromApi([]))
+      .finally(() => setLoading(false));
+  }, [searchQuery, statusFilter]);
+
+  const vehicles = vehiclesFromApi.map((v) => ({
+    id: String(v.id),
+    number_plate: v.number_plate,
+    make: v.make,
+    model: v.model,
+    year: v.year ?? 0,
+    type: v.vehicle_type || 'Car',
+    status: v.status === 'available' ? 'Available' : v.status === 'in-use' ? 'In-Use' : v.status === 'maintenance' ? 'Maintenance' : v.status,
+    health: v.health_score ?? 0,
+    lastInspection: v.updated_at ? timeAgo(v.updated_at) : '—',
+    image: PLACEHOLDER_IMAGE,
+  }));
+
+  // Filter vehicles based on search and filters (search already applied via API; filter by type client-side)
   const filteredVehicles = vehicles.filter(v => {
-    const matchesSearch = 
-      v.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.model.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || v.status === statusFilter;
     const matchesType = typeFilter === 'all' || v.type === typeFilter;
-    
-    return matchesSearch && matchesStatus && matchesType;
+    return matchesType;
   });
 
   // Get unique statuses and types
@@ -299,7 +319,7 @@ function VehicleCard({ vehicle, delay, onClick }: any) {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs text-slate-500 mb-1">Vehicle ID</p>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{vehicle.id}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{vehicle.number_plate ?? vehicle.id}</h3>
             </div>
             <span className={`px-3 py-1 rounded-lg text-xs font-medium backdrop-blur-md border ${statusColor}`}>
               {vehicle.status}

@@ -10,10 +10,11 @@ import { ArrowLeft, CalendarIcon, AlertCircle, User, CreditCard, Phone, ArrowRig
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
+import { inspectionService } from '@/services/inspectionService';
 
 export function CustomerDetails() {
   const navigate = useNavigate();
-  const { inspection, setCustomerInfo } = useInspection();
+  const { inspection, setCustomerInfo, setCurrentInspectionId } = useInspection();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -63,7 +64,7 @@ export function CustomerDetails() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -79,8 +80,22 @@ export function CustomerDetails() {
       rentalEndDate: formData.rentalEndDate!.toISOString(),
     });
 
-    toast.success('Customer details saved');
-    navigate('/driver/inspection/photos');
+    try {
+      const created = await inspectionService.create({
+        vehicle_id: parseInt(inspection.vehicleId!, 10),
+        customer_name: formData.name,
+        customer_nic: formData.nicPassport,
+        customer_phone: formData.phone,
+        rental_start: format(formData.rentalStartDate!, 'yyyy-MM-dd'),
+        rental_end: format(formData.rentalEndDate!, 'yyyy-MM-dd'),
+      });
+      setCurrentInspectionId(created.id);
+      toast.success('Customer details saved');
+      navigate('/driver/inspection/photos');
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { error?: string } } };
+      toast.error(ax.response?.data?.error || 'Failed to start inspection');
+    }
   };
 
   const handleCancel = () => {

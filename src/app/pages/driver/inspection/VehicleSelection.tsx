@@ -1,54 +1,63 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Search, Gauge, Calendar, ArrowRight, Sparkles } from 'lucide-react';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
 import { useInspection } from '@/contexts/InspectionContext';
+import { vehicleService } from '@/services/vehicleService';
+
+type VehicleCard = {
+  id: string;
+  number: string;
+  make: string;
+  model: string;
+  year: number;
+  health: number;
+  status: string;
+  image: string;
+  color: string;
+  lastInspection: string;
+};
 
 export function VehicleSelection() {
   const navigate = useNavigate();
   const { setVehicle } = useInspection();
+  const [vehicles, setVehicles] = useState<VehicleCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
-  const vehicles = [
-    { 
-      id: '1', 
-      number: 'ABC-1234', 
-      make: 'Toyota',
-      model: 'Premio', 
-      year: 2020, 
-      health: 85, 
-      status: 'Available',
-      image: 'https://images.unsplash.com/photo-1765597119459-2fc27a978af3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxUb3lvdGElMjBzZWRhbiUyMGNhciUyMHNpbHZlcnxlbnwxfHx8fDE3Njk0OTIyMzN8MA&ixlib=rb-4.1.0&q=80&w=1080',
-      color: 'Silver',
-      lastInspection: '3 days ago'
-    },
-    { 
-      id: '2', 
-      number: 'XYZ-5678', 
-      make: 'Honda',
-      model: 'Civic', 
-      year: 2021, 
-      health: 92, 
-      status: 'Available',
-      image: 'https://images.unsplash.com/photo-1666196774536-5b54e29bbded?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxIb25kYSUyMHNlZGFuJTIwY2FyJTIwd2hpdGV8ZW58MXx8fHwxNzY5NDkyMjMzfDA&ixlib=rb-4.1.0&q=80&w=1080',
-      color: 'White',
-      lastInspection: '1 week ago'
-    },
-    { 
-      id: '3', 
-      number: 'LMN-9012', 
-      make: 'Toyota',
-      model: 'Axio', 
-      year: 2019, 
-      health: 78, 
-      status: 'Available',
-      image: 'https://images.unsplash.com/photo-1758972687771-6ffd927a3661?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXIlMjBleHRlcmlvciUyMG1vZGVybiUyMGRlc2lnbnxlbnwxfHx8fDE3Njk0OTU4NzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-      color: 'Black',
-      lastInspection: '2 days ago'
-    },
-  ];
+  useEffect(() => {
+    vehicleService
+      .getAvailable()
+      .then((data) => {
+        const mapped: VehicleCard[] = (data.vehicles || []).map((v: { id: number; number_plate: string; make: string; model: string; year: number; health_score: number; photo_url?: string | null; color?: string | null }) => ({
+          id: String(v.id),
+          number: v.number_plate,
+          make: v.make,
+          model: v.model,
+          year: v.year || 0,
+          health: v.health_score ?? 100,
+          status: 'Available',
+          image: v.photo_url || 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800',
+          color: v.color || 'N/A',
+          lastInspection: '—',
+        }));
+        setVehicles(mapped);
+      })
+      .catch(() => setVehicles([]))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const handleVehicleSelect = (vehicle: typeof vehicles[0]) => {
+  const filtered = search.trim()
+    ? vehicles.filter(
+        (v) =>
+          v.number.toLowerCase().includes(search.toLowerCase()) ||
+          v.model.toLowerCase().includes(search.toLowerCase())
+      )
+    : vehicles;
+
+  const handleVehicleSelect = (vehicle: VehicleCard) => {
     setVehicle(vehicle.id, vehicle.number, vehicle.make, vehicle.model, vehicle.year);
     navigate('/driver/inspection/customer-details');
   };
@@ -92,6 +101,8 @@ export function VehicleSelection() {
             <Search className="absolute left-5 h-5 w-5 text-slate-400" />
             <Input 
               placeholder="Search by vehicle number or model..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-14 h-14 bg-transparent border-0 text-white placeholder:text-slate-500 focus-visible:ring-0" 
             />
           </div>
@@ -99,14 +110,18 @@ export function VehicleSelection() {
 
         {/* Vehicle Cards Grid */}
         <div className="grid gap-6">
-          {vehicles.map((vehicle, index) => (
+          {loading ? (
+            <div className="text-slate-400 text-center py-12">Loading vehicles...</div>
+          ) : (
+            filtered.map((vehicle, index) => (
             <VehicleGlassCard
               key={vehicle.id}
               vehicle={vehicle}
               onClick={() => handleVehicleSelect(vehicle)}
               delay={index * 100}
             />
-          ))}
+          ))
+          )}
         </div>
 
         {/* Info Card */}

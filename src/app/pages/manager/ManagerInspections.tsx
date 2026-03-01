@@ -1,29 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Search, Filter, Download, Calendar, Activity, FileText } from 'lucide-react';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
-
-const inspections = [
-  { id: '#INS-001234', date: '2 hours ago', vehicleId: 'CAB-4523', driverName: 'Rajitha Fernando', inspector: 'Kamal Perera', health: 92, damages: 2, status: 'Completed' },
-  { id: '#INS-001233', date: '5 hours ago', vehicleId: 'CAB-2891', driverName: 'Nimal Silva', inspector: 'Sunil Fernando', health: 78, damages: 5, status: 'Completed' },
-  { id: '#INS-001232', date: '1 day ago', vehicleId: 'CAB-7612', driverName: 'Amal Jayawardena', inspector: 'Kamal Perera', health: 85, damages: 3, status: 'Completed' },
-  { id: '#INS-001231', date: '2 days ago', vehicleId: 'VAN-1234', driverName: 'Suresh Kumar', inspector: 'Nimal Silva', health: 68, damages: 8, status: 'Completed' },
-];
+import { inspectionService } from '@/services/inspectionService';
+import { timeAgo } from '@/utils/time';
 
 export function ManagerInspections() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [inspectionsFromApi, setInspectionsFromApi] = useState<Array<{
+    id: number;
+    number_plate: string;
+    customer_name?: string;
+    driver_name?: string;
+    health_score?: number;
+    status: string;
+    created_at: string;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredInspections = inspections.filter(inspection => {
-    const matchesTab = activeTab === 'all' || inspection.status === activeTab;
-    const matchesSearch = 
+  useEffect(() => {
+    const statusParam = activeTab === 'all' ? undefined : activeTab === 'pending' ? 'in_progress' : 'completed';
+    inspectionService.getAll({ status: statusParam, search: searchQuery || undefined })
+      .then((data: any) => setInspectionsFromApi(data.inspections || []))
+      .catch(() => setInspectionsFromApi([]))
+      .finally(() => setLoading(false));
+  }, [activeTab, searchQuery]);
+
+  const inspectionsList = inspectionsFromApi.map((i) => ({
+    id: String(i.id),
+    displayId: `#INS-${String(i.id).padStart(6, '0')}`,
+    date: timeAgo(i.created_at),
+    vehicleId: i.number_plate,
+    driverName: i.customer_name ?? '—',
+    inspector: i.driver_name ?? '—',
+    health: i.health_score ?? 0,
+    damages: 0,
+    status: (i.status === 'completed' || i.status === 'reviewed' ? 'Completed' : 'Pending') as 'Completed' | 'Pending',
+  }));
+
+  const filteredInspections = inspectionsList.filter(inspection => {
+    const matchesSearch =
       inspection.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       inspection.vehicleId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       inspection.driverName.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
+    return matchesSearch;
   });
 
   return (
@@ -145,14 +169,18 @@ export function ManagerInspections() {
 
         {/* Inspections List */}
         <div className="space-y-4">
-          {filteredInspections.map((inspection, index) => (
-            <InspectionCard
-              key={inspection.id}
-              inspection={inspection}
-              delay={index * 50}
-              onClick={() => navigate(`/manager/inspections/${inspection.id}`)}
-            />
-          ))}
+          {loading ? (
+            <p className="text-slate-500 dark:text-slate-400">Loading inspections...</p>
+          ) : (
+            filteredInspections.map((inspection, index) => (
+              <InspectionCard
+                key={inspection.id}
+                inspection={inspection}
+                delay={index * 50}
+                onClick={() => navigate(`/manager/inspections/${inspection.id}`)}
+              />
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -193,7 +221,7 @@ function InspectionCard({ inspection, delay, onClick }: any) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-bold text-slate-900 dark:text-white">{inspection.id}</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white">{inspection.displayId ?? inspection.id}</h3>
               <span className="px-2 py-1 rounded text-xs bg-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-300">
                 {inspection.status}
               </span>

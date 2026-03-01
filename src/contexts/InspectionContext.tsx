@@ -39,6 +39,7 @@ export interface InspectionData {
   driverSignature: string | null;
   customerSignature: string | null;
   reportId: string | null;
+  currentInspectionId: number | null;
 }
 
 interface InspectionContextType {
@@ -54,6 +55,8 @@ interface InspectionContextType {
   setCustomerSignature: (signature: string) => void;
   generateReport: () => Promise<string>;
   resetInspection: () => void;
+  currentInspectionId: number | null;
+  setCurrentInspectionId: (id: number | null) => void;
 }
 
 const InspectionContext = createContext<InspectionContextType | undefined>(undefined);
@@ -82,6 +85,7 @@ const INITIAL_INSPECTION: InspectionData = {
   driverSignature: null,
   customerSignature: null,
   reportId: null,
+  currentInspectionId: null,
 };
 
 export function InspectionProvider({ children }: { children: ReactNode }) {
@@ -203,6 +207,10 @@ export function InspectionProvider({ children }: { children: ReactNode }) {
     setInspection(INITIAL_INSPECTION);
   };
 
+  const setCurrentInspectionId = (id: number | null) => {
+    setInspection(prev => ({ ...prev, currentInspectionId: id }));
+  };
+
   return (
     <InspectionContext.Provider
       value={{
@@ -218,6 +226,8 @@ export function InspectionProvider({ children }: { children: ReactNode }) {
         setCustomerSignature,
         generateReport,
         resetInspection,
+        currentInspectionId: inspection.currentInspectionId,
+        setCurrentInspectionId,
       }}
     >
       {children}

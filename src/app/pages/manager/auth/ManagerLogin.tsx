@@ -7,16 +7,29 @@ import { Label } from '@/app/components/ui/label';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
 import logoFull from 'figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png';
+import { authService } from '@/services/authService';
 
 export function ManagerLogin() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/manager/dashboard');
+    setLoading(true);
+    setError('');
+    try {
+      const { user } = await authService.login({ email, password });
+      navigate(user.role === 'manager' ? '/manager/dashboard' : '/driver/dashboard');
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { error?: string } } };
+      setError(ax.response?.data?.error || 'Login failed. Check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -127,6 +140,11 @@ export function ManagerLogin() {
               </div>
 
               <form onSubmit={handleLogin} className="space-y-5">
+                {error && (
+                  <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+                    {error}
+                  </div>
+                )}
                 {/* Email Field */}
                 <div>
                   <Label htmlFor="email" className="text-slate-300 mb-2 block">Email Address</Label>
@@ -188,9 +206,10 @@ export function ManagerLogin() {
                 {/* Login Button */}
                 <Button 
                   type="submit" 
+                  disabled={loading}
                   className="w-full h-12 bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/30 backdrop-blur-md font-semibold rounded-xl transition-all"
                 >
-                  Access Manager Dashboard
+                  {loading ? 'Signing in...' : 'Access Manager Dashboard'}
                 </Button>
 
                 {/* Divider */}

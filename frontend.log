@@ -1,0 +1,260 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm.
+
+> @figma/my-make-file@0.0.1 dev
+> vite
+
+
+  VITE v6.3.5  ready in 3815 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+Error: The following dependencies are imported but could not be resolved:
+
+  figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png (imported by /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/components/layout/ManagerSidebar.tsx)
+  figma:asset/8af09c45f3c6d32331b9124b980b7c787b7c268e.png (imported by /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/driver/inspection/ReportGenerated.tsx)
+
+Are they installed?
+    at file:///Users/bethmij/Downloads/FleetGuard%20AI%20Design%20Brief/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:14849:15
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/bethmij/Downloads/FleetGuard%20AI%20Design%20Brief/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:46985:28
+10:32:42 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/DesignSystem.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/DesignSystem.tsx:5:21
+  20 |  import { ArrowLeft, Copy, Check } from "lucide-react";
+  21 |  import { useState } from "react";
+  22 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  23 |  export function DesignSystem() {
+  24 |    _s();
+10:32:42 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/landing/LandingPage.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/landing/LandingPage.tsx:6:21
+  21 |  import { Car, Shield, Brain, BarChart3, MapPin, CheckCircle, Star, ArrowRight, Zap, Award, TrendingUp, Camera, FileText, Bell, Activity, Smartphone } from "lucide-react";
+  22 |  import { motion } from "motion/react";
+  23 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  24 |  export function LandingPage() {
+  25 |    _s();
+10:32:42 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/driver/auth/DriverForgotPassword.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/driver/auth/DriverForgotPassword.tsx:8:21
+  23 |  import { Mail, ArrowLeft, CheckCircle, Zap, Activity } from "lucide-react";
+  24 |  import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+  25 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  26 |  export function DriverForgotPassword() {
+  27 |    _s();
+10:32:42 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/driver/auth/DriverSignup.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/driver/auth/DriverSignup.tsx:9:21
+  24 |  import { Checkbox } from "@/app/components/ui/checkbox";
+  25 |  import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+  26 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  27 |  import { authService } from "@/services/authService";
+  28 |  export function DriverSignup() {
+10:32:42 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/driver/auth/DriverLogin.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/driver/auth/DriverLogin.tsx:9:21
+  24 |  import { Checkbox } from "@/app/components/ui/checkbox";
+  25 |  import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+  26 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  27 |  import { authService } from "@/services/authService";
+  28 |  export function DriverLogin() {
+10:32:42 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/8af09c45f3c6d32331b9124b980b7c787b7c268e.png" from "src/app/pages/driver/inspection/ReportGenerated.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/driver/inspection/ReportGenerated.tsx:24:21
+  38 |  import { toast } from "sonner";
+  39 |  import jsPDF from "jspdf";
+  40 |  import logoFull from "figma:asset/8af09c45f3c6d32331b9124b980b7c787b7c268e.png";
+     |                        ^
+  41 |  export function ReportGenerated() {
+  42 |    _s();
+10:32:42 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/manager/auth/ManagerLogin.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/manager/auth/ManagerLogin.tsx:9:21
+  24 |  import { Checkbox } from "@/app/components/ui/checkbox";
+  25 |  import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+  26 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  27 |  import { authService } from "@/services/authService";
+  28 |  export function ManagerLogin() {
+10:32:43 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/manager/auth/ManagerForgotPassword.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/manager/auth/ManagerForgotPassword.tsx:8:21
+  23 |  import { Mail, ArrowLeft, CheckCircle, Shield, BarChart3 } from "lucide-react";
+  24 |  import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+  25 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  26 |  export function ManagerForgotPassword() {
+  27 |    _s();
+10:32:43 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/components/layout/ManagerSidebar.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/components/layout/ManagerSidebar.tsx:35:21
+  50 |  } from "@/app/components/ui/alert-dialog";
+  51 |  import { toast } from "sonner";
+  52 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  53 |  function cn(...classes) {
+  54 |    return classes.filter(Boolean).join(" ");
+10:32:43 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/components/layout/DriverSidebar.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/components/layout/DriverSidebar.tsx:35:21
+  47 |  } from "@/app/components/ui/alert-dialog";
+  48 |  import { toast } from "sonner";
+  49 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  50 |  function cn(...classes) {
+  51 |    return classes.filter(Boolean).join(" ");
+10:32:45 AM [vite] (client) ✨ new dependencies optimized: lucide-react, motion/react, sonner, date-fns, react-router-dom, jspdf, recharts, signature_pad, axios, @radix-ui/react-switch, @radix-ui/react-slot, class-variance-authority, @radix-ui/react-popover, @radix-ui/react-tabs, @radix-ui/react-select, @radix-ui/react-label, @radix-ui/react-dialog, @radix-ui/react-progress, @radix-ui/react-dropdown-menu, @radix-ui/react-collapsible, @radix-ui/react-avatar, @radix-ui/react-checkbox, react-day-picker, clsx, tailwind-merge, @radix-ui/react-alert-dialog
+10:32:45 AM [vite] (client) ✨ optimized dependencies changed. reloading
+10:33:21 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/DesignSystem.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/DesignSystem.tsx:5:21
+  20 |  import { ArrowLeft, Copy, Check } from "lucide-react";
+  21 |  import { useState } from "react";
+  22 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  23 |  export function DesignSystem() {
+  24 |    _s();
+10:33:21 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/landing/LandingPage.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/landing/LandingPage.tsx:6:21
+  21 |  import { Car, Shield, Brain, BarChart3, MapPin, CheckCircle, Star, ArrowRight, Zap, Award, TrendingUp, Camera, FileText, Bell, Activity, Smartphone } from "lucide-react";
+  22 |  import { motion } from "motion/react";
+  23 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  24 |  export function LandingPage() {
+  25 |    _s();
+10:33:21 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/driver/auth/DriverLogin.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/driver/auth/DriverLogin.tsx:9:21
+  24 |  import { Checkbox } from "@/app/components/ui/checkbox";
+  25 |  import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+  26 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  27 |  import { authService } from "@/services/authService";
+  28 |  export function DriverLogin() {
+10:33:21 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/manager/auth/ManagerLogin.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/manager/auth/ManagerLogin.tsx:9:21
+  24 |  import { Checkbox } from "@/app/components/ui/checkbox";
+  25 |  import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+  26 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  27 |  import { authService } from "@/services/authService";
+  28 |  export function ManagerLogin() {
+10:33:21 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/driver/auth/DriverSignup.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/driver/auth/DriverSignup.tsx:9:21
+  24 |  import { Checkbox } from "@/app/components/ui/checkbox";
+  25 |  import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+  26 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  27 |  import { authService } from "@/services/authService";
+  28 |  export function DriverSignup() {
+10:33:21 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/driver/auth/DriverForgotPassword.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/driver/auth/DriverForgotPassword.tsx:8:21
+  23 |  import { Mail, ArrowLeft, CheckCircle, Zap, Activity } from "lucide-react";
+  24 |  import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+  25 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  26 |  export function DriverForgotPassword() {
+  27 |    _s();
+10:33:21 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/pages/manager/auth/ManagerForgotPassword.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/manager/auth/ManagerForgotPassword.tsx:8:21
+  23 |  import { Mail, ArrowLeft, CheckCircle, Shield, BarChart3 } from "lucide-react";
+  24 |  import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
+  25 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  26 |  export function ManagerForgotPassword() {
+  27 |    _s();
+10:33:21 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/8af09c45f3c6d32331b9124b980b7c787b7c268e.png" from "src/app/pages/driver/inspection/ReportGenerated.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/pages/driver/inspection/ReportGenerated.tsx:24:21
+  38 |  import { toast } from "sonner";
+  39 |  import jsPDF from "jspdf";
+  40 |  import logoFull from "figma:asset/8af09c45f3c6d32331b9124b980b7c787b7c268e.png";
+     |                        ^
+  41 |  export function ReportGenerated() {
+  42 |    _s();
+10:33:22 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/components/layout/ManagerSidebar.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/components/layout/ManagerSidebar.tsx:35:21
+  50 |  } from "@/app/components/ui/alert-dialog";
+  51 |  import { toast } from "sonner";
+  52 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  53 |  function cn(...classes) {
+  54 |    return classes.filter(Boolean).join(" ");
+10:33:22 AM [vite] (client) Pre-transform error: Failed to resolve import "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png" from "src/app/components/layout/DriverSidebar.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/bethmij/Downloads/FleetGuard AI Design Brief/src/app/components/layout/DriverSidebar.tsx:35:21
+  47 |  } from "@/app/components/ui/alert-dialog";
+  48 |  import { toast } from "sonner";
+  49 |  import logoFull from "figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png";
+     |                        ^
+  50 |  function cn(...classes) {
+  51 |    return classes.filter(Boolean).join(" ");
+10:39:14 AM [vite] (client) hmr update /src/app/App.tsx, /src/styles/index.css, /src/app/components/layout/ManagerLayout.tsx, /src/app/components/layout/DriverLayout.tsx
+11:12:09 AM [vite] (client) page reload src/services/inspectionService.js
+11:14:16 AM [vite] (client) hmr update /src/contexts/InspectionContext.tsx, /src/styles/index.css
+11:14:18 AM [vite] (client) hmr update /src/contexts/InspectionContext.tsx, /src/styles/index.css
+11:14:20 AM [vite] (client) hmr update /src/contexts/InspectionContext.tsx, /src/styles/index.css
+11:14:23 AM [vite] (client) hmr update /src/contexts/InspectionContext.tsx, /src/styles/index.css
+11:14:39 AM [vite] (client) hmr update /src/app/pages/driver/inspection/CustomerDetails.tsx, /src/styles/index.css
+11:14:40 AM [vite] (client) hmr update /src/app/pages/driver/inspection/CustomerDetails.tsx, /src/styles/index.css
+11:15:04 AM [vite] (client) hmr update /src/app/pages/driver/inspection/AIProcessing.tsx, /src/styles/index.css
+11:15:20 AM [vite] (client) hmr update /src/app/pages/driver/inspection/AIProcessing.tsx, /src/styles/index.css
+11:15:21 AM [vite] (client) hmr update /src/app/pages/driver/inspection/DigitalSignatures.tsx, /src/styles/index.css
+11:15:24 AM [vite] (client) hmr update /src/app/pages/driver/inspection/DigitalSignatures.tsx, /src/styles/index.css
+11:15:33 AM [vite] (client) hmr update /src/app/pages/driver/inspection/DigitalSignatures.tsx, /src/styles/index.css
+11:15:37 AM [vite] (client) hmr update /src/app/pages/driver/inspection/DigitalSignatures.tsx, /src/styles/index.css
+11:15:53 AM [vite] (client) hmr update /src/app/App.tsx, /src/styles/index.css
+11:16:02 AM [vite] (client) hmr update /src/app/App.tsx, /src/styles/index.css
+11:16:09 AM [vite] (client) hmr update /src/app/App.tsx, /src/styles/index.css
+11:16:23 AM [vite] (client) hmr update /src/app/App.tsx, /src/styles/index.css
+11:16:33 AM [vite] (client) hmr update /src/app/App.tsx, /src/styles/index.css
+11:17:29 AM [vite] (client) hmr update /src/app/pages/driver/InspectionHistory.tsx, /src/styles/index.css
+11:17:30 AM [vite] (client) hmr update /src/app/pages/driver/InspectionHistory.tsx, /src/styles/index.css
+11:17:47 AM [vite] (client) hmr update /src/app/pages/driver/InspectionHistory.tsx, /src/styles/index.css
+11:18:14 AM [vite] (client) hmr update /src/app/pages/driver/InspectionHistory.tsx, /src/styles/index.css
+11:18:22 AM [vite] (client) hmr update /src/app/pages/driver/InspectionHistory.tsx, /src/styles/index.css
+11:18:35 AM [vite] (client) hmr update /src/app/pages/driver/InspectionHistory.tsx, /src/styles/index.css
+11:18:50 AM [vite] (client) hmr update /src/app/pages/driver/InspectionHistory.tsx, /src/styles/index.css
+11:19:09 AM [vite] (client) hmr update /src/app/pages/driver/InspectionDetail.tsx, /src/styles/index.css
+11:20:29 AM [vite] (client) hmr update /src/app/pages/driver/InspectionDetail.tsx, /src/styles/index.css
+11:20:44 AM [vite] (client) hmr update /src/app/pages/driver/InspectionDetail.tsx, /src/styles/index.css
+11:20:50 AM [vite] (client) hmr update /src/app/pages/driver/InspectionDetail.tsx, /src/styles/index.css
+11:20:51 AM [vite] (client) hmr update /src/app/pages/driver/InspectionDetail.tsx, /src/styles/index.css
+11:21:23 AM [vite] (client) page reload src/services/inspectionService.js
+11:21:50 AM [vite] (client) hmr update /src/app/pages/manager/ManagerDashboard.tsx, /src/styles/index.css
+11:21:52 AM [vite] (client) hmr update /src/app/pages/manager/ManagerDashboard.tsx, /src/styles/index.css
+11:21:53 AM [vite] (client) hmr update /src/app/pages/manager/ManagerDashboard.tsx, /src/styles/index.css
+11:21:54 AM [vite] (client) hmr update /src/app/pages/manager/ManagerDashboard.tsx, /src/styles/index.css
+11:21:56 AM [vite] (client) hmr update /src/app/pages/manager/ManagerDashboard.tsx, /src/styles/index.css
+11:21:57 AM [vite] (client) hmr update /src/app/pages/manager/ManagerDashboard.tsx, /src/styles/index.css
+11:21:58 AM [vite] (client) hmr update /src/app/pages/manager/ManagerDashboard.tsx, /src/styles/index.css
+11:22:09 AM [vite] (client) hmr update /src/app/pages/manager/ManagerDashboard.tsx, /src/styles/index.css
+11:22:15 AM [vite] (client) hmr update /src/app/pages/manager/ManagerDashboard.tsx, /src/styles/index.css
+11:22:24 AM [vite] (client) hmr update /src/app/pages/manager/FleetManagement.tsx, /src/styles/index.css
+11:23:15 AM [vite] (client) hmr update /src/app/pages/manager/FleetManagement.tsx, /src/styles/index.css
+11:23:36 AM [vite] (client) hmr update /src/app/pages/manager/FleetManagement.tsx, /src/styles/index.css
+11:23:52 AM [vite] (client) hmr update /src/app/pages/manager/ManagerInspections.tsx, /src/styles/index.css
+11:23:55 AM [vite] (client) hmr update /src/app/pages/manager/ManagerInspections.tsx, /src/styles/index.css
+11:24:28 AM [vite] (client) hmr update /src/app/pages/manager/ManagerInspectionDetail.tsx, /src/styles/index.css
+11:24:33 AM [vite] (client) hmr update /src/app/pages/manager/ManagerInspectionDetail.tsx, /src/styles/index.css
+11:24:36 AM [vite] (client) hmr update /src/app/pages/manager/ManagerInspectionDetail.tsx, /src/styles/index.css
+11:24:55 AM [vite] (client) hmr update /src/app/pages/manager/Notifications.tsx, /src/styles/index.css
+11:25:09 AM [vite] (client) hmr update /src/app/pages/manager/ManagerInspections.tsx, /src/styles/index.css
+11:25:09 AM [vite] (client) hmr update /src/app/pages/manager/Notifications.tsx, /src/styles/index.css
+11:25:36 AM [vite] (client) hmr update /src/app/pages/manager/ManagerInspections.tsx, /src/styles/index.css
+11:25:53 AM [vite] (client) hmr update /src/app/pages/manager/VehicleDetails.tsx, /src/styles/index.css
+11:26:07 AM [vite] (client) hmr update /src/app/pages/manager/VehicleDetails.tsx, /src/styles/index.css
+11:26:18 AM [vite] (client) hmr update /src/app/pages/manager/AddEditVehicle.tsx, /src/styles/index.css
+11:26:29 AM [vite] (client) hmr update /src/app/pages/manager/AddEditVehicle.tsx, /src/styles/index.css
+11:26:31 AM [vite] (client) hmr update /src/app/pages/manager/AddEditVehicle.tsx, /src/styles/index.css
+11:26:37 AM [vite] (client) hmr update /src/app/pages/manager/AddEditVehicle.tsx, /src/styles/index.css

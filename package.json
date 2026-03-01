@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "verify": "node scripts/run-and-verify.cjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -66,7 +67,8 @@
     "sonner": "2.0.3",
     "tailwind-merge": "3.2.0",
     "tw-animate-css": "1.3.8",
-    "vaul": "1.1.2"
+    "vaul": "1.1.2",
+    "axios": "^1.7.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",

@@ -1,10 +1,36 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '@/app/components/ui/button';
 import { Car, FileText, AlertTriangle, Activity, ArrowRight, TrendingUp } from 'lucide-react';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
+import { dashboardService } from '@/services/dashboardService';
+import { timeAgo } from '@/utils/time';
 
 export function ManagerDashboard() {
   const navigate = useNavigate();
+  const [stats, setStats] = useState<{
+    fleet: { total: string; available: string; in_use: string; maintenance: string; avg_health: string };
+    today_count: number;
+    recent_damages: Array<{ damage_type: string; severity: string; number_plate: string; created_at: string }>;
+  } | null>(null);
+  const [healthDist, setHealthDist] = useState<{ good: string; fair: string; poor: string } | null>(null);
+  const [activity, setActivity] = useState<Array<{ date: string; count: string }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      dashboardService.getStats(),
+      dashboardService.getHealthDist(),
+      dashboardService.getActivityChart(),
+    ])
+      .then(([s, h, a]) => {
+        setStats(s);
+        setHealthDist(h);
+        setActivity(Array.isArray((a as any).activity) ? (a as any).activity : []);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="min-h-screen relative">
@@ -62,7 +88,7 @@ export function ManagerDashboard() {
                   Welcome back, Ravi
                 </h1>
                 <p className="text-slate-700 dark:text-slate-300 text-lg">
-                  Managing 47 vehicles across the fleet
+                  Managing {loading ? '…' : (stats?.fleet?.total ?? '0')} vehicles across the fleet
                 </p>
               </div>
             </div>
@@ -78,7 +104,7 @@ export function ManagerDashboard() {
               </div>
               <div className="relative">
                 <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">Total Vehicles</p>
-                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-1 counter-animate">47</p>
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-1 counter-animate">{loading ? '—' : (stats?.fleet?.total ?? '0')}</p>
                 <p className="text-xs text-blue-600 dark:text-blue-400">+3 this month</p>
               </div>
             </div>
@@ -91,7 +117,7 @@ export function ManagerDashboard() {
               </div>
               <div className="relative">
                 <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">Available Now</p>
-                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-1">32</p>
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-1">{loading ? '—' : (stats?.fleet?.available ?? '0')}</p>
                 <p className="text-xs text-blue-600 dark:text-blue-400">68% of fleet</p>
               </div>
             </div>
@@ -104,8 +130,8 @@ export function ManagerDashboard() {
               </div>
               <div className="relative">
                 <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">Inspections</p>
-                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-1">156</p>
-                <p className="text-xs text-blue-600 dark:text-blue-400">This month</p>
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-1">{loading ? '—' : (stats?.today_count ?? '0')}</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">Today</p>
               </div>
             </div>
           </GlassCard>
@@ -117,7 +143,7 @@ export function ManagerDashboard() {
               </div>
               <div className="relative">
                 <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">Needs Attention</p>
-                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-1">3</p>
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-1">{loading ? '—' : (stats?.fleet?.maintenance ?? '0')}</p>
                 <p className="text-xs text-slate-500">Maintenance required</p>
               </div>
             </div>
@@ -130,18 +156,18 @@ export function ManagerDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-xl bg-slate-200/30 dark:bg-white/5 border border-slate-300/50 dark:border-white/10">
               <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">Excellent (80-100)</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">19</p>
-              <p className="text-xs text-slate-500">40% of fleet</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{loading ? '—' : (healthDist?.good ?? '0')}</p>
+              <p className="text-xs text-slate-500">Good health</p>
             </div>
             <div className="p-4 rounded-xl bg-slate-200/30 dark:bg-white/5 border border-slate-300/50 dark:border-white/10">
               <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">Good (60-79)</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">21</p>
-              <p className="text-xs text-slate-500">45% of fleet</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{loading ? '—' : (healthDist?.fair ?? '0')}</p>
+              <p className="text-xs text-slate-500">Fair health</p>
             </div>
             <div className="p-4 rounded-xl bg-slate-200/30 dark:bg-white/5 border border-slate-300/50 dark:border-white/10">
               <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">Needs Service (&lt;60)</p>
-              <p className="text-3xl font-bold text-slate-600 dark:text-slate-400">7</p>
-              <p className="text-xs text-slate-500">15% of fleet</p>
+              <p className="text-3xl font-bold text-slate-600 dark:text-slate-400">{loading ? '—' : (healthDist?.poor ?? '0')}</p>
+              <p className="text-xs text-slate-500">Needs attention</p>
             </div>
           </div>
         </GlassCard>
@@ -156,18 +182,20 @@ export function ManagerDashboard() {
             </Button>
           </div>
           <div className="space-y-3">
-            {[
+            {(stats?.recent_damages?.length ? stats.recent_damages : [
               { vehicle: 'CAB-4523', issue: 'Dent - Severe', time: '2 hours ago' },
               { vehicle: 'CAB-2891', issue: 'Scratch - Minor', time: '5 hours ago' },
               { vehicle: 'VAN-1234', issue: 'Crack - Moderate', time: '1 day ago' },
-            ].map((alert, index) => (
+            ]).map((alert: any, index: number) => (
               <div key={index} className="flex items-center gap-4 p-4 rounded-xl bg-slate-200/30 dark:bg-white/5 border border-slate-300/50 dark:border-white/10 hover:bg-slate-200/50 dark:hover:bg-white/10 transition-all cursor-pointer">
                 <AlertTriangle className="h-5 w-5 text-slate-600 dark:text-slate-400" />
                 <div className="flex-1">
-                  <p className="font-semibold text-slate-900 dark:text-white">{alert.vehicle}</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{alert.issue}</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">{alert.number_plate ?? alert.vehicle}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {alert.damage_type ? `${alert.damage_type} - ${alert.severity}` : alert.issue}
+                  </p>
                 </div>
-                <span className="text-xs text-slate-500">{alert.time}</span>
+                <span className="text-xs text-slate-500">{alert.created_at ? timeAgo(alert.created_at) : alert.time}</span>
               </div>
             ))}
           </div>

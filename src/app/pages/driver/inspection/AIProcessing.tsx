@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useInspection } from '@/contexts/InspectionContext';
 import { Progress } from '@/app/components/ui/progress';
 import { Loader2, Brain, ScanLine, Calculator, FileText } from 'lucide-react';
+import { inspectionService } from '@/services/inspectionService';
 
 const PROCESSING_STEPS = [
   { icon: FileText, message: 'Uploading photos...', duration: 15 },
@@ -11,55 +12,66 @@ const PROCESSING_STEPS = [
   { icon: Brain, message: 'Generating report...', duration: 20 },
 ];
 
+const severityMap: Record<string, 'minor' | 'moderate' | 'major'> = {
+  low: 'minor',
+  medium: 'moderate',
+  high: 'major',
+};
+
 export function AIProcessing() {
   const navigate = useNavigate();
-  const { inspection, processPhotos } = useInspection();
+  const { inspection, setDamages, setHealthScore, currentInspectionId } = useInspection();
   const [progress, setProgress] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Redirect if no photos
     const capturedPhotos = inspection.photos.filter((p) => p.captured);
     if (capturedPhotos.length === 0) {
       navigate('/driver/inspection/photos');
       return;
     }
-
-    // Start processing
+    if (!currentInspectionId) {
+      navigate('/driver/inspection/customer-details');
+      return;
+    }
     startProcessing();
   }, []);
 
   const startProcessing = async () => {
     try {
-      // Simulate progress through steps
       let totalProgress = 0;
-      
       for (let i = 0; i < PROCESSING_STEPS.length; i++) {
         setCurrentStepIndex(i);
         const step = PROCESSING_STEPS[i];
         const stepDuration = step.duration;
-        const incrementPerTick = stepDuration / 20; // 20 ticks per step
+        const incrementPerTick = stepDuration / 20;
 
         for (let tick = 0; tick < 20; tick++) {
-          await new Promise((resolve) => setTimeout(resolve, 150)); // 150ms per tick
+          await new Promise((resolve) => setTimeout(resolve, 150));
           totalProgress += incrementPerTick;
           setProgress(Math.min(totalProgress, 100));
         }
       }
 
-      // Process photos with AI (mock)
-      await processPhotos();
+      const data = await inspectionService.analyzeWithAI(currentInspectionId);
+      const mappedDamages = (data.damages || []).map((d: { type: string; severity: string; confidence: number; location?: string }, idx: number) => ({
+        id: String(idx + 1),
+        type: d.type as 'scratch' | 'dent' | 'crack' | 'broken',
+        severity: severityMap[d.severity] || 'minor',
+        location: d.location || 'Unknown',
+        confidence: d.confidence || 0,
+        photoId: '1',
+      }));
+      setDamages(mappedDamages);
+      setHealthScore(data.health_score ?? 100);
 
-      // Navigate to results
       setIsProcessing(false);
-      setTimeout(() => {
-        navigate('/driver/inspection/results');
-      }, 500);
-    } catch (error) {
-      console.error('Processing error:', error);
-      // Handle error - for now just continue
-      navigate('/driver/inspection/results');
+      setTimeout(() => navigate('/driver/inspection/results'), 500);
+    } catch (err) {
+      setError('Analysis failed. Please retry.');
+      setTimeout(() => navigate('/driver/inspection/results'), 1500);
     }
   };
 
@@ -144,7 +156,7 @@ export function AIProcessing() {
         {/* Warning Message */}
         <div className="bg-yellow-500/20 backdrop-blur-sm border border-yellow-500/30 rounded-lg p-4">
           <p className="text-yellow-100 text-sm text-center">
-            <strong>Please wait</strong> - Do not close this page while processing
+            {error || <><strong>Please wait</strong> - Do not close this page while processing</>}
           </p>
         </div>
 

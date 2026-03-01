@@ -1,26 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { Bell, AlertCircle, FileText, Wrench, CheckCircle2, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
-
-const notifications = [
-  { id: 1, type: 'damage', title: 'New damage detected', message: 'Severe dent on CAB-4523 rear bumper', time: '5 mins ago', read: false },
-  { id: 2, type: 'inspection', title: 'Inspection completed', message: 'CAB-2891 inspection completed by Kamal Perera', time: '1 hour ago', read: false },
-  { id: 3, type: 'maintenance', title: 'Maintenance due', message: 'CAB-7612 requires service in 3 days', time: '2 hours ago', read: true },
-  { id: 4, type: 'system', title: 'Weekly report ready', message: 'Your weekly fleet summary is ready to view', time: '1 day ago', read: true },
-  { id: 5, type: 'damage', title: 'Low health score alert', message: 'CAB-3344 health dropped to 65%', time: '2 days ago', read: true },
-  { id: 6, type: 'inspection', title: 'Pre-trip inspection', message: 'VAN-1234 pre-trip inspection by Sunil Silva', time: '3 days ago', read: true },
-  { id: 7, type: 'maintenance', title: 'Oil change completed', message: 'SUV-5678 maintenance service completed', time: '4 days ago', read: true },
-  { id: 8, type: 'damage', title: 'Minor scratch detected', message: 'Small scratch on CAB-2891 door panel', time: '5 days ago', read: true },
-];
+import { notificationService } from '@/services/notificationService';
+import { timeAgo } from '@/utils/time';
 
 type FilterType = 'all' | 'unread' | 'inspection' | 'damage' | 'maintenance';
 
 export function Notifications() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [notificationsList, setNotificationsList] = useState(notifications);
+  const [notificationsList, setNotificationsList] = useState<Array<{ id: number; type: string; title: string; message: string; time: string; read: boolean }>>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter notifications based on active filter
+  const load = () => {
+    notificationService.getAll()
+      .then((data: any) => {
+        const list = (data.notifications || []).map((n: any) => ({
+          id: n.id,
+          type: n.type || 'system',
+          title: (n.type || 'Notification').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+          message: n.message || '',
+          time: timeAgo(n.created_at),
+          read: !!n.is_read,
+        }));
+        setNotificationsList(list);
+      })
+      .catch(() => setNotificationsList([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
   const filteredNotifications = notificationsList.filter(n => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'unread') return !n.read;
@@ -32,18 +44,18 @@ export function Notifications() {
 
   const unreadCount = notificationsList.filter(n => !n.read).length;
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    await notificationService.markAllRead();
     setNotificationsList(notificationsList.map(n => ({ ...n, read: true })));
+  };
+
+  const markAsRead = async (id: number) => {
+    await notificationService.markRead(id);
+    setNotificationsList(notificationsList.map(n => (n.id === id ? { ...n, read: true } : n)));
   };
 
   const deleteNotification = (id: number) => {
     setNotificationsList(notificationsList.filter(n => n.id !== id));
-  };
-
-  const markAsRead = (id: number) => {
-    setNotificationsList(notificationsList.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
   };
 
   return (
@@ -117,7 +129,7 @@ export function Notifications() {
 
         {/* Results Count */}
         <div className="text-slate-400 text-sm">
-          Showing {filteredNotifications.length} of {notificationsList.length} notifications
+          {loading ? 'Loading...' : `Showing ${filteredNotifications.length} of ${notificationsList.length} notifications`}
         </div>
 
         {/* Notifications List */}

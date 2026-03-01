@@ -1,27 +1,97 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Button } from '@/app/components/ui/button';
-import { ArrowLeft, Download, Share2, Car, User, FileText, Activity } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Car, User, FileText, Activity, CheckCircle, Flag } from 'lucide-react';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
+import { inspectionService } from '@/services/inspectionService';
+
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace(/\/api\/?$/, '');
 
 export function ManagerInspectionDetail() {
   const navigate = useNavigate();
-  const { inspectionId } = useParams();
+  const { inspectionId } = useParams<{ inspectionId: string }>();
+  const id = inspectionId ?? '';
 
-  const inspection = {
-    id: inspectionId || '#INS-001234',
-    date: '2 hours ago',
-    vehicle: { id: 'CAB-4523', make: 'Toyota', model: 'Prius', year: 2020 },
-    customer: { name: 'Rajitha Fernando', phone: '+94 77 123 4567', email: 'rajitha@example.com' },
-    inspector: { name: 'Kamal Perera', id: 'DRV-0123' },
-    health: 92,
-    damages: [
-      { type: 'Scratch', severity: 'Minor', location: 'Front Bumper', confidence: 92 },
-      { type: 'Dent', severity: 'Moderate', location: 'Rear Door', confidence: 88 },
-    ],
-    photos: [
-      'https://images.unsplash.com/photo-1758179128122-6079c9cb3e4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB2ZWhpY2xlJTIwc2VkYW4lMjBwYXJrZWR8ZW58MXx8fHwxNzY5NTE0OTU3fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    ],
+  const [inspection, setInspection] = useState<{
+    id: string;
+    date: string;
+    vehicle: { id: string; make: string; model: string; year: number | string };
+    customer: { name: string; phone: string; email?: string };
+    inspector: { name: string; id: string };
+    health: number;
+    damages: Array<{ type: string; severity: string; location: string; confidence: number }>;
+    photos: string[];
+    status: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [reviewing, setReviewing] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!id) return;
+    inspectionService.getOne(id)
+      .then((data: any) => {
+        const bbox = (d: any) => (typeof d.bbox_json === 'string' ? JSON.parse(d.bbox_json || '{}') : d.bbox_json || {});
+        setInspection({
+          id: `#INS-${String(data.id).padStart(6, '0')}`,
+          date: new Date(data.created_at).toLocaleString(),
+          vehicle: {
+            id: data.number_plate,
+            make: data.make,
+            model: data.model,
+            year: (data as any).year ?? 'N/A',
+          },
+          customer: { name: data.customer_name || '—', phone: data.customer_phone || '—' },
+          inspector: { name: data.driver_name || '—', id: String(data.driver_id) },
+          health: data.health_score ?? 0,
+          damages: (data.damages || []).map((d: any) => ({
+            type: (d.damage_type || '').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+            severity: (d.severity || '').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+            location: bbox(d).location || '—',
+            confidence: parseFloat(d.confidence) || 0,
+          })),
+          photos: (data.photos || []).map((p: any) => p.file_url ? `${API_BASE}${p.file_url}` : '').filter(Boolean),
+          status: data.status,
+        });
+      })
+      .catch(() => setInspection(null))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const handleReview = async (status: 'approved' | 'flagged') => {
+    if (!id) return;
+    setReviewing(true);
+    setError('');
+    try {
+      await inspectionService.reviewInspection(id, status, reviewNotes);
+      setInspection((prev) => (prev ? { ...prev, status: 'reviewed' } : null));
+    } catch (e: any) {
+      setError(e.response?.data?.error || 'Review failed');
+    } finally {
+      setReviewing(false);
+    }
   };
+
+  const handleDownloadPdf = () => {
+    window.open(inspectionService.getPdfUrl(id), '_blank');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-400">Loading inspection...</p>
+      </div>
+    );
+  }
+  if (!inspection) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-slate-400">Inspection not found.</p>
+        <Button variant="outline" onClick={() => navigate('/manager/inspections')}>Back to list</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-6">
@@ -41,7 +111,7 @@ export function ManagerInspectionDetail() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleDownloadPdf}>
             <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>
@@ -108,7 +178,7 @@ export function ManagerInspectionDetail() {
 
       <GlassCard title="Inspection Photos">
         <div className="grid grid-cols-3 gap-4">
-          {inspection.photos.map((photo, index) => (
+          {inspection.photos.length > 0 ? inspection.photos.map((photo, index) => (
             <div key={index} className="relative rounded-xl overflow-hidden h-40">
               <ImageWithFallback
                 src={photo}
@@ -116,9 +186,42 @@ export function ManagerInspectionDetail() {
                 className="w-full h-full object-cover"
               />
             </div>
-          ))}
+          )) : (
+            <p className="text-slate-500 col-span-3">No photos</p>
+          )}
         </div>
       </GlassCard>
+
+      {inspection.status !== 'reviewed' && (
+        <GlassCard title="Review inspection">
+          {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+          <textarea
+            placeholder="Notes (optional)"
+            value={reviewNotes}
+            onChange={(e) => setReviewNotes(e.target.value)}
+            className="w-full p-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-slate-500 mb-4 min-h-[80px]"
+          />
+          <div className="flex gap-2">
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              disabled={reviewing}
+              onClick={() => handleReview('approved')}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Approve
+            </Button>
+            <Button
+              variant="outline"
+              className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
+              disabled={reviewing}
+              onClick={() => handleReview('flagged')}
+            >
+              <Flag className="h-4 w-4 mr-2" />
+              Flag
+            </Button>
+          </div>
+        </GlassCard>
+      )}
     </div>
   );
 }

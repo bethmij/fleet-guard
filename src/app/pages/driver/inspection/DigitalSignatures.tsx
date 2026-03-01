@@ -7,10 +7,11 @@ import { Checkbox } from '@/app/components/ui/checkbox';
 import { ArrowLeft, Check, Eraser, PenTool } from 'lucide-react';
 import SignaturePad from 'signature_pad';
 import { toast } from 'sonner';
+import { inspectionService } from '@/services/inspectionService';
 
 export function DigitalSignatures() {
   const navigate = useNavigate();
-  const { inspection, setDriverSignature, setCustomerSignature } = useInspection();
+  const { inspection, currentInspectionId } = useInspection();
   
   const driverCanvasRef = useRef<HTMLCanvasElement>(null);
   const customerCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -20,11 +21,15 @@ export function DigitalSignatures() {
   const [driverSigned, setDriverSigned] = useState(false);
   const [customerSigned, setCustomerSigned] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
-    // Redirect if no damages analyzed
     if (inspection.healthScore === null) {
       navigate('/driver/inspection/photos');
+      return;
+    }
+    if (!currentInspectionId) {
+      navigate('/driver/inspection/results');
       return;
     }
 
@@ -96,43 +101,39 @@ export function DigitalSignatures() {
     navigate('/driver/inspection/results');
   };
 
-  const handleGenerateReport = () => {
-    if (!driverSigned) {
-      toast.error('Driver signature is required');
+  const handleGenerateReport = async () => {
+    if (!driverSigned || !customerSigned || !agreed) return;
+    if (!driverPadRef.current || !customerPadRef.current || driverPadRef.current.isEmpty() || customerPadRef.current.isEmpty()) {
+      toast.error('Both signatures are required');
+      return;
+    }
+    if (!currentInspectionId) {
+      toast.error('Inspection session lost. Please start again.');
       return;
     }
 
-    if (!customerSigned) {
-      toast.error('Customer signature is required');
-      return;
-    }
-
-    if (!agreed) {
-      toast.error('Please confirm the agreement');
-      return;
-    }
-
-    // Save signatures
-    if (driverPadRef.current && customerPadRef.current) {
-      // Check if signatures are not empty
-      if (driverPadRef.current.isEmpty()) {
-        toast.error('Driver signature is required');
+    setGenerating(true);
+    try {
+      const driverBlob = await new Promise<Blob | null>((res) =>
+        driverPadRef.current!.toBlob((b) => res(b), 'image/png')
+      );
+      const customerBlob = await new Promise<Blob | null>((res) =>
+        customerPadRef.current!.toBlob((b) => res(b), 'image/png')
+      );
+      if (!driverBlob || !customerBlob) {
+        toast.error('Could not capture signatures');
+        setGenerating(false);
         return;
       }
-      
-      if (customerPadRef.current.isEmpty()) {
-        toast.error('Customer signature is required');
-        return;
-      }
-
-      const driverSignatureData = driverPadRef.current.toDataURL();
-      const customerSignatureData = customerPadRef.current.toDataURL();
-
-      setDriverSignature(driverSignatureData);
-      setCustomerSignature(customerSignatureData);
-
-      toast.success('Signatures saved');
-      navigate('/driver/inspection/report');
+      await inspectionService.uploadSignature(currentInspectionId, driverBlob, 'driver');
+      await inspectionService.uploadSignature(currentInspectionId, customerBlob, 'customer');
+      const { pdf_url } = await inspectionService.generatePdf(currentInspectionId);
+      toast.success('Report generated');
+      navigate('/driver/inspection/report', { state: { pdf_url, inspectionId: currentInspectionId } });
+    } catch (err) {
+      toast.error('Failed to generate report. Please try again.');
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -320,9 +321,9 @@ export function DigitalSignatures() {
             <Button
               className="flex-1 bg-[#2196f3] hover:bg-[#1976d2] text-white"
               onClick={handleGenerateReport}
-              disabled={!canProceed}
+              disabled={!canProceed || generating}
             >
-              Generate Report
+              {generating ? 'Generating...' : 'Generate Report'}
             </Button>
           </div>
         </div>

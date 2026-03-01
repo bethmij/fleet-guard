@@ -7,11 +7,14 @@ import { Label } from '@/app/components/ui/label';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
 import logoFull from 'figma:asset/55aa009e656ec7bb3a1624f42ee7391769762ee0.png';
+import { authService } from '@/services/authService';
 
 export function DriverSignup() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -21,10 +24,33 @@ export function DriverSignup() {
     agreeToTerms: false,
   });
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add validation here
-    navigate('/driver/dashboard');
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      await authService.register({
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        role: 'driver',
+        phone: formData.phone || undefined,
+      });
+      navigate('/driver/dashboard');
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: { error?: string } } };
+      setError(ax.response?.data?.error || 'Sign up failed. Try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (field: string, value: string | boolean) => {
@@ -118,6 +144,11 @@ export function DriverSignup() {
               </div>
 
               <form onSubmit={handleSignup} className="space-y-4">
+                {error && (
+                  <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+                    {error}
+                  </div>
+                )}
                 {/* Full Name Field */}
                 <div>
                   <Label htmlFor="fullName" className="text-slate-300 mb-2 block">Full Name</Label>
@@ -229,7 +260,12 @@ export function DriverSignup() {
 
                 {/* Terms & Conditions */}
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="terms" className="border-white/20" required />
+                  <Checkbox
+                    id="terms"
+                    className="border-white/20"
+                    checked={formData.agreeToTerms}
+                    onCheckedChange={(checked) => handleChange('agreeToTerms', !!checked)}
+                  />
                   <label htmlFor="terms" className="text-sm text-slate-300 cursor-pointer leading-relaxed">
                     I agree to the{' '}
                     <a href="#" className="text-white hover:underline cursor-pointer">Terms & Conditions</a>
@@ -242,9 +278,9 @@ export function DriverSignup() {
                 <Button 
                   type="submit" 
                   className="w-full h-12 bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/30 backdrop-blur-md font-semibold rounded-xl transition-all"
-                  disabled={!formData.agreeToTerms}
+                  disabled={!formData.agreeToTerms || loading}
                 >
-                  Create Account
+                  {loading ? 'Creating account...' : 'Create Account'}
                 </Button>
 
                 {/* Divider */}

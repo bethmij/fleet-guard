@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useInspection } from '@/contexts/InspectionContext';
 import { Button } from '@/app/components/ui/button';
 import { Card } from '@/app/components/ui/card';
@@ -22,11 +22,16 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import logoFull from 'figma:asset/8af09c45f3c6d32331b9124b980b7c787b7c268e.png';
+import { inspectionService } from '@/services/inspectionService';
 
 export function ReportGenerated() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { inspection, generateReport, resetInspection } = useInspection();
-  const [isGenerating, setIsGenerating] = useState(true);
+  const statePdfUrl = (location.state as { pdf_url?: string; inspectionId?: number } | null)?.pdf_url;
+  const stateInspectionId = (location.state as { inspectionId?: number } | null)?.inspectionId;
+  const [inspectionFromApi, setInspectionFromApi] = useState<{ number_plate?: string; customer_name?: string; health_score?: number; damages?: unknown[] } | null>(null);
+  const [isGenerating, setIsGenerating] = useState(!statePdfUrl);
   const [reportId, setReportId] = useState<string | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareMethod, setShareMethod] = useState<'whatsapp' | 'email'>('whatsapp');
@@ -37,14 +42,29 @@ export function ReportGenerated() {
   });
 
   useEffect(() => {
-    // Generate report ID
+    if (stateInspectionId) {
+      inspectionService.getOne(stateInspectionId).then((data) => setInspectionFromApi(data));
+    }
+  }, [stateInspectionId]);
+
+  useEffect(() => {
+    if (statePdfUrl != null) {
+      setIsGenerating(false);
+      setReportId(`INS-${String(stateInspectionId ?? '').padStart(6, '0')}`);
+      const plate = inspectionFromApi?.number_plate ?? inspection.vehicleNumber;
+      const score = inspectionFromApi?.health_score ?? inspection.healthScore ?? 0;
+      const base = typeof window !== 'undefined' ? window.location.origin : '';
+      setShareData(prev => ({
+        ...prev,
+        message: `Your vehicle inspection report for ${plate} is ready. Health Score: ${score}/100. Download: ${base}${statePdfUrl}`,
+      }));
+      return;
+    }
     const generate = async () => {
       try {
         const id = await generateReport();
         setReportId(id);
         setIsGenerating(false);
-        
-        // Set default share message
         setShareData(prev => ({
           ...prev,
           message: `Here is your vehicle inspection report for ${inspection.vehicleNumber}. Health Score: ${inspection.healthScore}/100. View the complete report in the attached PDF.`,
@@ -55,11 +75,17 @@ export function ReportGenerated() {
         setIsGenerating(false);
       }
     };
-
     generate();
   }, []);
 
+  const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace(/\/api\/?$/, '');
+
   const handleDownloadPDF = () => {
+    if (statePdfUrl && stateInspectionId) {
+      window.open(inspectionService.getPdfUrl(stateInspectionId), '_blank');
+      toast.success('Opening report...');
+      return;
+    }
     try {
       toast.info('Generating professional PDF report...');
       

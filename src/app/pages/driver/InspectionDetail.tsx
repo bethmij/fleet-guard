@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Button } from '@/app/components/ui/button';
 import { Card } from '@/app/components/ui/card';
@@ -32,74 +32,84 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { inspectionService } from '@/services/inspectionService';
+import { healthColor, healthLabel } from '@/utils/healthScore';
+
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace(/\/api\/?$/, '');
 
 export function InspectionDetail() {
   const navigate = useNavigate();
-  const { id } = useParams();
-  
+  const { id } = useParams<{ id: string }>();
+  const inspectionId = id ?? '';
+
   const [photosExpanded, setPhotosExpanded] = useState(false);
   const [damagesExpanded, setDamagesExpanded] = useState(true);
   const [signaturesExpanded, setSignaturesExpanded] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [inspection, setInspection] = useState<{
+    id: string;
+    status: string;
+    date: Date;
+    inspector: string;
+    vehicle: { number: string; make: string; model: string; year: number | string; photo: string };
+    customer: { name: string; nicPassport: string; phone: string; rentalStart: Date; rentalEnd: Date };
+    results: { healthScore: number; damageCount: number; severityBreakdown: { minor: number; moderate: number; major: number } };
+    photos: Array<{ id: string; label: string; url: string }>;
+    damages: Array<{ id: string; type: string; severity: string; location: string; confidence: number }>;
+    pdf_url?: string | null;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data
-  const inspection = {
-    id: 'INS-2026-0001',
-    status: 'Completed',
-    date: new Date(2026, 0, 25, 14, 30),
-    inspector: 'Driver Name',
-    vehicle: {
-      number: 'CAB-1234',
-      make: 'Toyota',
-      model: 'KDH Van',
-      year: 2020,
-      photo: 'https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=400',
-    },
-    customer: {
-      name: 'Michael Brown',
-      nicPassport: '199012345678',
-      phone: '+94 77 123 4567',
-      rentalStart: new Date(2026, 0, 25),
-      rentalEnd: new Date(2026, 0, 30),
-    },
-    results: {
-      healthScore: 92,
-      damageCount: 2,
-      severityBreakdown: {
-        minor: 2,
-        moderate: 0,
-        major: 0,
-      },
-    },
-    photos: [
-      { id: '1', label: 'Front View', url: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400' },
-      { id: '2', label: 'Rear View', url: 'https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=400' },
-      { id: '3', label: 'Left Side', url: 'https://images.unsplash.com/photo-1464219789935-c2d9d9aba644?w=400' },
-      { id: '4', label: 'Right Side', url: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400' },
-      { id: '5', label: 'Interior', url: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=400' },
-      { id: '6', label: 'Dashboard', url: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400' },
-      { id: '7', label: 'Damage 1', url: 'https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=400' },
-      { id: '8', label: 'Damage 2', url: 'https://images.unsplash.com/photo-1464219789935-c2d9d9aba644?w=400' },
-    ],
-    damages: [
-      {
-        id: '1',
-        type: 'Scratch',
-        severity: 'minor',
-        location: 'Front bumper, driver side',
-        confidence: 92,
-        photoId: '7',
-      },
-      {
-        id: '2',
-        type: 'Dent',
-        severity: 'minor',
-        location: 'Rear door, passenger side',
-        confidence: 88,
-        photoId: '8',
-      },
-    ],
-  };
+  useEffect(() => {
+    if (!inspectionId) return;
+    inspectionService.getOne(inspectionId)
+      .then((data: any) => {
+        const bbox = (d: any) => (typeof d.bbox_json === 'string' ? JSON.parse(d.bbox_json || '{}') : d.bbox_json || {});
+        const minor = (data.damages || []).filter((d: any) => d.severity === 'low').length;
+        const moderate = (data.damages || []).filter((d: any) => d.severity === 'medium').length;
+        const major = (data.damages || []).filter((d: any) => d.severity === 'high').length;
+        setInspection({
+          id: `#INS-${String(data.id).padStart(6, '0')}`,
+          status: (data.status || 'completed').charAt(0).toUpperCase() + (data.status || '').slice(1),
+          date: new Date(data.created_at),
+          inspector: data.driver_name || 'Driver',
+          vehicle: {
+            number: data.number_plate,
+            make: data.make,
+            model: data.model,
+            year: (data as any).year ?? 'N/A',
+            photo: (data.photos && data.photos[0]?.file_url) ? `${API_BASE}${data.photos[0].file_url}` : 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400',
+          },
+          customer: {
+            name: data.customer_name || '—',
+            nicPassport: data.customer_nic || '—',
+            phone: data.customer_phone || '—',
+            rentalStart: new Date(data.rental_start),
+            rentalEnd: new Date(data.rental_end),
+          },
+          results: {
+            healthScore: data.health_score ?? 0,
+            damageCount: (data.damages || []).length,
+            severityBreakdown: { minor, moderate, major },
+          },
+          photos: (data.photos || []).map((p: any, i: number) => ({
+            id: String(p.id || i),
+            label: (p.photo_type || 'Photo').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+            url: p.file_url ? `${API_BASE}${p.file_url}` : '',
+          })).filter((p: any) => p.url),
+          damages: (data.damages || []).map((d: any, i: number) => ({
+            id: String(d.id || i),
+            type: (d.damage_type || 'Damage').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+            severity: d.severity === 'low' ? 'minor' : d.severity === 'medium' ? 'moderate' : 'major',
+            location: bbox(d).location || '—',
+            confidence: parseFloat(d.confidence) || 0,
+          })),
+          pdf_url: data.pdf_url,
+        });
+      })
+      .catch(() => setInspection(null))
+      .finally(() => setLoading(false));
+  }, [inspectionId]);
 
   const getHealthScoreColor = (score: number) => {
     if (score >= 80) return { bg: 'bg-[#4caf50]', text: 'text-[#4caf50]', label: 'Excellent' };
@@ -121,7 +131,27 @@ export function InspectionDetail() {
     );
   };
 
-  const scoreData = getHealthScoreColor(inspection.results.healthScore);
+  const scoreData = getHealthScoreColor(inspection?.results?.healthScore ?? 0);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <p className="text-gray-500 dark:text-gray-400">Loading inspection...</p>
+      </div>
+    );
+  }
+  if (!inspection) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center gap-4">
+        <p className="text-gray-500 dark:text-gray-400">Inspection not found.</p>
+        <Button variant="outline" onClick={() => navigate('/driver/history')}>Back to History</Button>
+      </div>
+    );
+  }
+
+  const handleDownloadPdf = () => {
+    window.open(inspectionService.getPdfUrl(inspectionId), '_blank');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-6">
@@ -146,7 +176,7 @@ export function InspectionDetail() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadPdf}>
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF
                 </DropdownMenuItem>
@@ -377,7 +407,7 @@ export function InspectionDetail() {
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3">
-          <Button className="bg-[#dc2626] hover:bg-[#b91c1c] text-white">
+          <Button className="bg-[#dc2626] hover:bg-[#b91c1c] text-white" onClick={handleDownloadPdf}>
             <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>

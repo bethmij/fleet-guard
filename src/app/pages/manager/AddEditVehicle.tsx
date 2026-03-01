@@ -1,18 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Textarea } from '@/app/components/ui/textarea';
 import { ArrowLeft, Save, Upload } from 'lucide-react';
+import { vehicleService } from '@/services/vehicleService';
 
 export function AddEditVehicle() {
   const navigate = useNavigate();
-  const { vehicleId } = useParams();
+  const { vehicleId } = useParams<{ vehicleId: string }>();
   const isEdit = !!vehicleId;
 
   const [formData, setFormData] = useState({
-    vehicleNumber: isEdit ? vehicleId : '',
+    vehicleNumber: '',
     make: '',
     model: '',
     year: '',
@@ -23,12 +24,70 @@ export function AddEditVehicle() {
     mileage: '',
     notes: '',
   });
+  const [loading, setLoading] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (isEdit && vehicleId) {
+      vehicleService.getOne(vehicleId)
+        .then((v: any) => {
+          setFormData({
+            vehicleNumber: v.number_plate ?? '',
+            make: v.make ?? '',
+            model: v.model ?? '',
+            year: v.year ?? '',
+            type: v.vehicle_type || 'Car',
+            color: v.color ?? '',
+            license: v.number_plate ?? '',
+            vin: v.vin ?? '',
+            mileage: '',
+            notes: v.notes ?? '',
+          });
+        })
+        .catch(() => setError('Vehicle not found'))
+        .finally(() => setLoading(false));
+    }
+  }, [isEdit, vehicleId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle save
-    navigate('/manager/fleet');
+    setSaving(true);
+    setError('');
+    try {
+      if (isEdit && vehicleId) {
+        await vehicleService.update(vehicleId, {
+          make: formData.make,
+          model: formData.model,
+          year: formData.year ? Number(formData.year) : undefined,
+          color: formData.color || undefined,
+          notes: formData.notes || undefined,
+        });
+      } else {
+        await vehicleService.create({
+          number_plate: formData.vehicleNumber,
+          make: formData.make,
+          model: formData.model,
+          year: formData.year ? Number(formData.year) : undefined,
+          color: formData.color || undefined,
+          vehicle_type: formData.type,
+        });
+      }
+      navigate('/manager/fleet');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Save failed');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-400">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-6">
@@ -56,6 +115,7 @@ export function AddEditVehicle() {
 
       {/* Form */}
       <form onSubmit={handleSubmit}>
+        {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
         <div className="space-y-6">
           {/* Basic Information */}
           <div className="relative rounded-2xl overflow-hidden">
@@ -208,9 +268,9 @@ export function AddEditVehicle() {
             >
               Cancel
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
-              {isEdit ? 'Save Changes' : 'Add Vehicle'}
+              {saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Add Vehicle'}
             </Button>
           </div>
         </div>

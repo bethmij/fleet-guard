@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Button } from '@/app/components/ui/button';
 import { 
@@ -12,34 +13,87 @@ import {
   Wrench
 } from 'lucide-react';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
+import { vehicleService } from '@/services/vehicleService';
+import { inspectionService } from '@/services/inspectionService';
+import { timeAgo } from '@/utils/time';
+
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1758179128122-6079c9cb3e4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080';
 
 export function VehicleDetails() {
   const navigate = useNavigate();
-  const { vehicleId } = useParams();
+  const { vehicleId } = useParams<{ vehicleId: string }>();
+  const id = vehicleId ?? '';
 
-  const vehicle = {
-    id: vehicleId || 'CAB-4523',
-    make: 'Toyota',
-    model: 'Prius',
-    year: 2020,
-    type: 'Car',
-    color: 'White',
-    license: 'ABC-1234',
-    vin: '1HGBH41JXMN109186',
-    status: 'Available',
-    health: 92,
-    purchaseDate: '01/15/2020',
-    lastService: '12/20/2025',
-    nextService: '03/20/2026',
-    mileage: '45,000 km',
-    image: 'https://images.unsplash.com/photo-1758179128122-6079c9cb3e4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB2ZWhpY2xlJTIwc2VkYW4lMjBwYXJrZWR8ZW58MXx8fHwxNzY5NTE0OTU3fDA&ixlib=rb-4.1.0&q=80&w=1080',
+  const [vehicle, setVehicle] = useState<{
+    id: string;
+    make: string;
+    model: string;
+    year: number;
+    type: string;
+    color?: string;
+    license: string;
+    vin?: string;
+    status: string;
+    health: number;
+    image: string;
+  } | null>(null);
+  const [inspections, setInspections] = useState<Array<{ date: string; health: number; inspector: string; damages: number }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    Promise.all([
+      vehicleService.getOne(id),
+      inspectionService.getAll({ vehicle_id: id, limit: 10 }),
+    ])
+      .then(([vData, iData]: any[]) => {
+        const v = vData;
+        setVehicle({
+          id: v.number_plate ?? String(v.id),
+          make: v.make,
+          model: v.model,
+          year: v.year ?? 0,
+          type: v.vehicle_type || 'Car',
+          color: v.color,
+          license: v.number_plate,
+          vin: v.vin,
+          status: v.status === 'available' ? 'Available' : v.status === 'in-use' ? 'In-Use' : v.status === 'maintenance' ? 'Maintenance' : v.status,
+          health: v.health_score ?? 0,
+          image: PLACEHOLDER_IMAGE,
+        });
+        setInspections((iData.inspections || []).map((i: any) => ({
+          date: timeAgo(i.created_at),
+          health: i.health_score ?? 0,
+          inspector: i.driver_name ?? '—',
+          damages: 0,
+        })));
+      })
+      .catch(() => setVehicle(null))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!id || !vehicle) return;
+    const apiStatus = newStatus === 'Available' ? 'available' : newStatus === 'In-Use' ? 'in-use' : 'maintenance';
+    await vehicleService.updateStatus(id, apiStatus);
+    setVehicle((prev) => (prev ? { ...prev, status: newStatus } : null));
   };
 
-  const inspections = [
-    { date: '2 days ago', health: 92, inspector: 'Kamal Perera', damages: 2 },
-    { date: '1 week ago', health: 89, inspector: 'Nimal Silva', damages: 3 },
-    { date: '2 weeks ago', health: 87, inspector: 'Sunil Fernando', damages: 4 },
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-400">Loading vehicle...</p>
+      </div>
+    );
+  }
+  if (!vehicle) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-slate-400">Vehicle not found.</p>
+        <Button variant="outline" onClick={() => navigate('/manager/fleet')}>Back to fleet</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-6">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -29,75 +29,59 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
+import { inspectionService } from '@/services/inspectionService';
+import { healthColor } from '@/utils/healthScore';
 
-const mockInspections = [
-  {
-    id: 'INS-2026-0001',
-    vehicleNumber: 'CAB-1234',
-    vehicleMake: 'Toyota',
-    vehicleModel: 'KDH Van',
-    customerName: 'Michael Brown',
-    date: new Date(2026, 0, 25, 14, 30),
-    healthScore: 92,
-    damageCount: 0,
-    status: 'completed' as const,
-    image: 'https://images.unsplash.com/photo-1765597119459-2fc27a978af3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxUb3lvdGElMjBzZWRhbiUyMGNhciUyMHNpbHZlcnxlbnwxfHx8fDE3Njk0OTIyMzN8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'INS-2026-0002',
-    vehicleNumber: 'VAN-5678',
-    vehicleMake: 'Toyota',
-    vehicleModel: 'Hiace',
-    customerName: 'Sarah Johnson',
-    date: new Date(2026, 0, 24, 10, 15),
-    healthScore: 78,
-    damageCount: 3,
-    status: 'completed' as const,
-    image: 'https://images.unsplash.com/photo-1666196774536-5b54e29bbded?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxIb25kYSUyMHNlZGFuJTIwY2FyJTIwd2hpdGV8ZW58MXx8fHwxNzY5NDkyMjMzfDA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'INS-2026-0003',
-    vehicleNumber: 'CAR-9012',
-    vehicleMake: 'Suzuki',
-    vehicleModel: 'Every',
-    customerName: 'David Lee',
-    date: new Date(2026, 0, 23, 16, 45),
-    healthScore: 85,
-    damageCount: 2,
-    status: 'completed' as const,
-    image: 'https://images.unsplash.com/photo-1758972687771-6ffd927a3661?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXIlMjBleHRlcmlvciUyMG1vZGVybiUyMGRlc2lnbnxlbnwxfHx8fDE3Njk0OTU4NzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'INS-2026-0004',
-    vehicleNumber: 'SUV-7890',
-    vehicleMake: 'Toyota',
-    vehicleModel: 'Prado',
-    customerName: 'Emma Wilson',
-    date: new Date(2026, 0, 22, 9, 0),
-    healthScore: 65,
-    damageCount: 5,
-    status: 'completed' as const,
-    image: 'https://images.unsplash.com/photo-1666196774536-5b54e29bbded?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxIb25kYSUyMHNlZGFuJTIwY2FyJTIwd2hpdGV8ZW58MXx8fHwxNzY5NDkyMjMzfDA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'INS-2026-0005',
-    vehicleNumber: 'CAB-2468',
-    vehicleMake: 'Nissan',
-    vehicleModel: 'Caravan',
-    customerName: 'James Anderson',
-    date: new Date(2026, 0, 21, 13, 20),
-    healthScore: 95,
-    damageCount: 0,
-    status: 'completed' as const,
-    image: 'https://images.unsplash.com/photo-1765597119459-2fc27a978af3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxUb3lvdGElMjBzZWRhbiUyMGNhciUyMHNpbHZlcnxlbnwxfHx8fDE3Njk0OTIyMzN8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-];
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400';
+
+const mockInspections: Array<{
+  id: string;
+  vehicleNumber: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  customerName: string;
+  date: Date;
+  healthScore: number;
+  damageCount: number;
+  status: 'completed' | 'in_progress';
+  image: string;
+}> = [];
 
 export function InspectionHistory() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
+  const [inspectionsFromApi, setInspectionsFromApi] = useState<Array<{
+    id: number;
+    number_plate: string;
+    make: string;
+    model: string;
+    health_score?: number;
+    created_at: string;
+    status: string;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    inspectionService.getMine(1)
+      .then((data) => setInspectionsFromApi(data.inspections || []))
+      .catch(() => setInspectionsFromApi([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const inspectionsList: typeof mockInspections = inspectionsFromApi.map((i) => ({
+    id: String(i.id),
+    vehicleNumber: i.number_plate,
+    vehicleMake: i.make,
+    vehicleModel: i.model,
+    customerName: '—',
+    date: new Date(i.created_at),
+    healthScore: i.health_score ?? 0,
+    damageCount: 0,
+    status: (i.status === 'completed' || i.status === 'in_progress' ? i.status : 'completed') as 'completed' | 'in_progress',
+    image: PLACEHOLDER_IMAGE,
+  }));
 
   const handleViewDetails = (inspectionId: string) => {
     navigate(`/driver/history/${inspectionId}`);
@@ -117,7 +101,7 @@ export function InspectionHistory() {
     }
   };
 
-  const filteredInspections = mockInspections
+  const filteredInspections = inspectionsList
     .filter((inspection) => {
       const matchesSearch =
         inspection.vehicleNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -227,7 +211,11 @@ export function InspectionHistory() {
         </div>
 
         {/* Inspection List */}
-        {filteredInspections.length === 0 ? (
+        {loading ? (
+          <div className="p-12 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 text-center">
+            <p className="text-slate-400">Loading inspections...</p>
+          </div>
+        ) : filteredInspections.length === 0 ? (
           <div className="p-12 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 text-center">
             <FileText className="h-16 w-16 text-slate-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white mb-2">No Inspections Found</h3>
@@ -285,11 +273,14 @@ function InspectionCard({ inspection, onView, onDownload, onShare, onDelete, del
             
             {/* Health Score Badge */}
             <div className="absolute top-4 left-4">
-              <div className={`px-3 py-2 rounded-xl backdrop-blur-md font-semibold flex items-center gap-2 ${
-                inspection.healthScore >= 80 ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
-                inspection.healthScore >= 60 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                'bg-red-500/20 text-red-300 border border-red-500/30'
-              }`}>
+              <div
+                className="px-3 py-2 rounded-xl backdrop-blur-md font-semibold flex items-center gap-2 border"
+                style={{
+                  backgroundColor: `${healthColor(inspection.healthScore)}20`,
+                  color: healthColor(inspection.healthScore),
+                  borderColor: `${healthColor(inspection.healthScore)}40`,
+                }}
+              >
                 <Gauge className="h-4 w-4" />
                 {inspection.healthScore}
               </div>
